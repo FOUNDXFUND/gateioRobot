@@ -12,10 +12,107 @@ import (
 	"strings"
 	"fmt"
 	"encoding/json"
+	"Sknife/utils"
 )
 
-const KEY  = "your api key"; // gate.io api key
-const SECRET = "your api secret";  // gate.io api secret
+
+
+type GateApi struct {
+	key string
+	secret string
+}
+
+
+func (s *GateApi) Buy(currencyPair string, rate string, amount string) (b *OrderPlace,err error) {
+	method := "POST"
+	url := "https://api.gateio.io/api2/1/private/buy"
+	param := "currencyPair=" + currencyPair + "&rate=" + rate + "&amount=" + amount
+	ret,err := s.httpGo(method,url,param)
+	if err != nil {
+		return
+	}
+	x := &OrderPlace{}
+	str := fmt.Sprintf("[buy] %s", string(ret))
+	utils.WriteLog("gate.response.log", str)
+	err = json.Unmarshal(ret,x)
+	return x,err
+}
+
+
+// 挂卖单
+func (s *GateApi) Sell(currencyPair string, rate string, amount string) (sb *OrderPlace, err error) {
+	method := "POST"
+	url := "https://api.gateio.io/api2/1/private/sell"
+	param := "currencyPair=" + currencyPair + "&rate=" + rate + "&amount=" + amount
+	ret,err := s.httpGo(method,url,param)
+	if err != nil {
+		return
+	}
+	x := &OrderPlace{}
+	err = json.Unmarshal(ret,x)
+	return x,err
+}
+
+
+// 取消订单
+func (s *GateApi) CancelOrder(orderNumber string, currencyPair string ) (c *CancelOrderStruct,err error) {
+	method := "POST"
+	url := "https://api.gateio.io/api2/1/private/cancelOrder"
+	param := "orderNumber=" + orderNumber + "&currencyPair=" + currencyPair
+	ret,err := s.httpGo(method,url,param)
+	x := &CancelOrderStruct{}
+	err = json.Unmarshal(ret, x)
+	return x,err
+}
+
+
+
+// 查询挂单状态
+func (s *GateApi) GetOrderStatus (orderNumber string, currencyPair string) (sb *OrderStatus, err error) {
+	method := "POST"
+	url := "https://api.gateio.io/api2/1/private/getOrder"
+	param := "orderNumber=" + orderNumber + "&currencyPair=" + currencyPair
+	ret,err := s.httpGo(method,url,param)
+	if err != nil {
+		return
+	}
+	x := &OrderStatus{}
+	err = json.Unmarshal(ret,x)
+	return x,err
+}
+
+
+
+// 查询余额
+func (s *GateApi) GetBalances() (b *BalanceStruct,err error) {
+	method := "POST"
+	url := "https://api.gateio.io/api2/1/private/balances"
+	param := ""
+	ret,err := s.httpGo(method,url,param)
+	x := &BalanceStruct{}
+	fmt.Println(string(ret))
+	str := fmt.Sprintf("[getBalance] %s", string(ret))
+	utils.WriteLog("gate.response.log", str)
+	err = json.Unmarshal(ret,x)
+	return x,err
+}
+
+// 当前挂单列表
+func (s *GateApi) OrderBook(params string) (o *OrderBookStruct,err error) {
+	method := "GET"
+	url := "http://data.gateio.io/api2/1/orderBook/" + params
+	param := ""
+	ret,err := s.httpGo(method,url,param)
+	if err != nil {
+		return
+	}
+
+	x := &OrderBookStruct{}
+	err = json.Unmarshal(ret,x)
+	return x,err
+}
+
+
 
 // all support pairs
 func getPairs() string {
@@ -76,26 +173,7 @@ func orderBooks() string {
 }
 
 
-type OrderBookStruct struct {
-	Result string
-	Asks [][]float64
-	Bids [][]float64
-}
 
-// Depth of pair
-func OrderBook(params string) (o *OrderBookStruct,err error) {
-	method := "GET"
-	url := "http://data.gateio.io/api2/1/orderBook/" + params
-	param := ""
-	ret,err := httpGo(method,url,param)
-	if err != nil {
-		return
-	}
-
-	x := &OrderBookStruct{}
-	err = json.Unmarshal(ret,x)
-	return x,err
-}
 
 
 // Trade History
@@ -108,14 +186,6 @@ func tradeHistory(params string) string {
 }
 
 
-// Get account fund balances
-func balances() string {
-	var method string = "POST"
-	var url string = "https://api.gateio.io/api2/1/private/balances"
-	var param string = ""
-	var ret string = httpDo(method,url,param)
-	return ret
-}
 
 
 
@@ -139,33 +209,10 @@ func depositsWithdrawals(start string, end string) string {
 }
 
 
-// Place order buy
-func buy(currencyPair string, rate string, amount string) string {
-	var method string = "POST"
-	var url string = "https://api.gateio.io/api2/1/private/buy"
-	var param string = "currencyPair=" + currencyPair + "&rate=" + rate + "&amount=" + amount
-	var ret string = httpDo(method,url,param)
-	return ret
-}
-
-// Place order sell
-func sell(currencyPair string, rate string, amount string) string {
-	var method string = "POST"
-	var url string = "https://api.gateio.io/api2/1/private/sell"
-	var param string = "currencyPair=" + currencyPair + "&rate=" + rate + "&amount=" + amount
-	var ret string = httpDo(method,url,param)
-	return ret
-}
 
 
-// Cancel order
-func cancelOrder(orderNumber string, currencyPair string ) string {
-	var method string = "POST"
-	var url string = "https://api.gateio.io/api2/1/private/cancelOrder"
-	var param string = "orderNumber=" + orderNumber + "&currencyPair=" + currencyPair
-	var ret string = httpDo(method,url,param)
-	return ret
-}
+
+
 
 // Cancel all orders
 func cancelAllOrders( types string, currencyPair string ) string {
@@ -176,15 +223,6 @@ func cancelAllOrders( types string, currencyPair string ) string {
 	return ret
 }
 
-
-// Get order status
-func getOrder( orderNumber string, currencyPair string ) string {
-	var method string = "POST"
-	var url string = "https://api.gateio.io/api2/1/private/getOrder"
-	var param string = "orderNumber=" + orderNumber + "&currencyPair=" + currencyPair
-	var ret string = httpDo(method,url,param)
-	return ret
-}
 
 
 // Get my open order list
@@ -217,8 +255,8 @@ func withdraw( currency string, amount string, address string) string {
 }
 
 
-func getSign( params string) string {
-	key := []byte(SECRET)
+func (s *GateApi)getSign(params string) string {
+	key := []byte(s.secret)
 	mac := hmac.New(sha512.New, key)
 	mac.Write([]byte(params))
 	return fmt.Sprintf("%x", mac.Sum(nil))
@@ -228,41 +266,20 @@ func getSign( params string) string {
 *  gate.io 官方垃圾代码,待删除
 */
 func httpDo(method string,url string, param string) string {
-	client := &http.Client{}
-
-	req, err := http.NewRequest(method, url, strings.NewReader(param))
-	if err != nil {
-		return ""
-	}
-	var sign string = getSign(param)
-
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	req.Header.Set("key", KEY)
-	req.Header.Set("sign", sign)
-
-	resp, err := client.Do(req)
-
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return ""
-	}
-
-	return string(body);
+	return ""
 }
 
-func httpGo(method string,url string, param string) (ret []byte,err error) {
+func (s *GateApi) httpGo(method string,url string, param string) (ret []byte,err error) {
 	client := &http.Client{}
 
 	req, err := http.NewRequest(method, url, strings.NewReader(param))
 	if err != nil {
 		return
 	}
-	var sign string = getSign(param)
 
+	sign := s.getSign(param)
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	req.Header.Set("key", KEY)
+	req.Header.Set("key", s.key)
 	req.Header.Set("sign", sign)
 
 	resp, err := client.Do(req)
