@@ -49,3 +49,26 @@ type Order struct {
 	InitialRate float64 // 下单价格
 	InitialAmount float64 // 下单数量
 }
+
+type OpenOrders struct {
+	Result string
+	Message string
+	Code int
+	Elapsed string
+	Orders []*Oders
+}
+
+type Oders struct {
+	OrderNumber string
+	Type string
+	Rate string
+	Amount string
+	Total string
+	InitialRate string
+	InitialAmount string
+	FilledRate string
+	FilledAmount string
+	CurrencyPair string
+	Timestamp string
+	Status string // 订单状态, open 正在挂单?  cancelled 已取消， done 已完成。
+} 

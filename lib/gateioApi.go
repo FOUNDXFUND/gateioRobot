@@ -18,8 +18,8 @@ import (
 
 
 type GateApi struct {
-	key string
-	secret string
+	Key string
+	Secret string
 }
 
 
@@ -97,7 +97,7 @@ func (s *GateApi) GetBalances() (b *BalanceStruct,err error) {
 	return x,err
 }
 
-// 当前挂单列表
+// 获取当前市场深度(所有买单，卖单列表)
 func (s *GateApi) OrderBook(params string) (o *OrderBookStruct,err error) {
 	method := "GET"
 	url := "http://data.gateio.io/api2/1/orderBook/" + params
@@ -111,6 +111,21 @@ func (s *GateApi) OrderBook(params string) (o *OrderBookStruct,err error) {
 	err = json.Unmarshal(ret,x)
 	return x,err
 }
+
+
+
+// 读取用户当前所有挂单列表
+func (s *GateApi) GetOpenOrders() (o *OpenOrders,err error) {
+	method := "POST"
+	url := "https://api.gateio.io/api2/1/private/openOrders"
+	param := ""
+	ret,err  := s.httpGo(method,url,param)
+	//fmt.Println(string(ret))
+	x := &OpenOrders{}
+	err = json.Unmarshal(ret,x)
+	return x,err
+}
+
 
 
 
@@ -225,15 +240,6 @@ func cancelAllOrders( types string, currencyPair string ) string {
 
 
 
-// Get my open order list
-func openOrders() string {
-	var method string = "POST"
-	var url string = "https://api.gateio.io/api2/1/private/openOrders"
-	var param string = ""
-	var ret string = httpDo(method,url,param)
-	return ret
-}
-
 
 // 获取我的24小时内成交记录
 func myTradeHistory( currencyPair string, orderNumber string) string {
@@ -256,7 +262,7 @@ func withdraw( currency string, amount string, address string) string {
 
 
 func (s *GateApi)getSign(params string) string {
-	key := []byte(s.secret)
+	key := []byte(s.Secret)
 	mac := hmac.New(sha512.New, key)
 	mac.Write([]byte(params))
 	return fmt.Sprintf("%x", mac.Sum(nil))
@@ -279,7 +285,7 @@ func (s *GateApi) httpGo(method string,url string, param string) (ret []byte,err
 
 	sign := s.getSign(param)
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	req.Header.Set("key", s.key)
+	req.Header.Set("key", s.Key)
 	req.Header.Set("sign", sign)
 
 	resp, err := client.Do(req)

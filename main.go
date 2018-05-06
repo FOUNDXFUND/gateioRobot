@@ -2,14 +2,15 @@ package main
 
 import (
 	"gateioRobot/lib"
-	"fmt"
-	"errors"
-	"github.com/fatih/color"
-	"github.com/shopspring/decimal"
+	//"fmt"
+	//"errors"
+	//"github.com/fatih/color"
+	//"github.com/shopspring/decimal"
 	"time"
 	"os"
 	"io/ioutil"
 	"encoding/json"
+	"gateioRobot/service"
 )
 
 const SHOW_ALL_DEPTH  = false
@@ -20,24 +21,26 @@ var NewOrderNumber = make(chan int)
 func main() {
 	cfg := LoadCfg()
 	gateio := &lib.GateApi{cfg.Key,cfg.Secret}
-
-	go Timer()
-	Test()
-
+	go Timer(gateio)
 	select{}
 }
 
 
 // 每两秒取一次
-func Timer() {
+func Timer(gateio *lib.GateApi) {
 	ticker := time.NewTicker(2 * time.Second)
 	for _ = range ticker.C {
-		// 当前订单状态
-		fmt.Println("每两秒一次...")
+		openOrders, err := gateio.GetOpenOrders()
+		if err != nil {
+			panic(err)
+		}
+
+		service.OderStatusChecking(openOrders)
 	}
 
 }
 
+/*
 
 func OrderWathcer() {
 	for {
@@ -67,18 +70,22 @@ func Test() {
 	}
 
 
-	/*c,err := lib.Buy(PAIR, "0.001","1")
+	*/
+/*c,err := lib.Buy(PAIR, "0.001","1")
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Println(c)*/
+	fmt.Println(c)*//*
+
 }
 
+*/
 /*
 	备注:买入手续费 = 购买花费ETH总值 * 0.0018(0.18%)
    	卖出手续费 = 出售DDD总数量 *  0.0018(0.18%)
-*/
+*//*
+
 
 func Auto() {
 	ask1, bid1,orderBook := GetBidAskInfo(PAIR)
@@ -157,6 +164,7 @@ func GetBidAskInfo(pair string)(ask1,bid1 decimal.Decimal,orders *lib.OrderBookS
 
 	return a1,b1,s
 }
+*/
 
 
 
